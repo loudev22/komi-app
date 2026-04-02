@@ -1,0 +1,9 @@
+{
+  "name": "komi-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions para Komi",
+  "dependencies": {
+    "web-push": "^3.6.7",
+    "@netlify/functions": "^2.0.0"
+  }
+}
