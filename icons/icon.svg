@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Fondo naranja sólido -->
+  <rect width="180" height="180" rx="40" fill="#FF6B00"/>
+  <!-- Letra k en blanco, centrada -->
+  <text
+    x="90"
+    y="128"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="110"
+    font-weight="900"
+    fill="white"
+    text-anchor="middle"
+  >k</text>
+</svg>
