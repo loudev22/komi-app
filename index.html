@@ -235,8 +235,29 @@
   }
   .meal-row:hover .meal-del { opacity: 1; }
 
-  /* Add button */
-  .add-btn {
+  /* ── PUSH NOTIFICATION BANNER ── */
+  .notif-banner {
+    margin: 16px 20px 0;
+    background: linear-gradient(135deg, #FFF0E6, #FFE4CC);
+    border: 1.5px solid var(--orange-mid);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .notif-banner:active { transform: scale(0.98); }
+  .notif-banner.hidden { display: none; }
+  .notif-banner-icon { font-size: 26px; flex-shrink: 0; }
+  .notif-banner-text { flex: 1; }
+  .notif-banner-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .notif-banner-sub { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .notif-banner-btn {
+    background: var(--orange); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 7px 12px; font-family: 'Outfit', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    white-space: nowrap;
+  }
     margin: 0 20px 8px;
     background: var(--text);
     border: none; border-radius: 16px;
@@ -577,6 +598,16 @@
         <div class="group-val" id="g-legume">0%</div>
         <div class="group-bar-bg"><div class="group-bar" id="gb-legume" style="width:0%;background:var(--legume-color)"></div></div>
       </div>
+    </div>
+
+    <!-- Banner activar notificaciones -->
+    <div class="notif-banner hidden" id="notif-banner" onclick="requestPushPermission()">
+      <div class="notif-banner-icon">🔔</div>
+      <div class="notif-banner-text">
+        <div class="notif-banner-title">Activa los recordatorios</div>
+        <div class="notif-banner-sub">Te avisamos a las 10am y 5pm para registrar</div>
+      </div>
+      <button class="notif-banner-btn">Activar</button>
     </div>
 
     <div class="meals-section">
@@ -1311,35 +1342,48 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
-async function subscribeToPush(registration) {
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    });
-
-    await fetch('/.netlify/functions/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription })
-    });
-
-    console.log('✅ Push subscription guardada');
-  } catch (err) {
-    console.warn('⚠️ Push subscription falló:', err);
+// Mostrar banner si no hay permiso aún
+function checkNotifBanner() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (Notification.permission === 'default') {
+    document.getElementById('notif-banner').classList.remove('hidden');
   }
 }
+
+// Se llama al tocar el banner
+window.requestPushPermission = async function() {
+  const banner = document.getElementById('notif-banner');
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      banner.classList.add('hidden');
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+      await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription })
+      });
+      showToast('✅ Recordatorios activados');
+    } else {
+      banner.classList.add('hidden');
+    }
+  } catch (err) {
+    console.warn('Push error:', err);
+    showToast('No se pudieron activar las notificaciones');
+  }
+};
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js');
       console.log('✅ Komi SW registrado:', reg.scope);
-      // Pedir permiso de notificaciones después de 3 segundos
-      setTimeout(() => subscribeToPush(reg), 3000);
+      // Mostrar banner después de que carga la app
+      setTimeout(checkNotifBanner, 1500);
     } catch (err) {
       console.warn('⚠️ SW no registrado:', err);
     }
