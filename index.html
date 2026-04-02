@@ -1027,22 +1027,13 @@ window.classifyMeal = async function() {
   document.getElementById('classify-btn').disabled = true;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/.netlify/functions/classify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        system: `Eres un nutriólogo. Clasifica el alimento descrito en uno o más de estos grupos: Proteína, Verdura, Carbohidrato, Leguminosa, Lácteo, Fruta, Otro. 
-Responde SOLO con JSON, sin texto adicional, sin backticks. Ejemplo: {"groups":["Proteína","Carbohidrato"]}
-El usuario es mexicano, considera alimentos tradicionales mexicanos.`,
-        messages: [{ role: 'user', content: `Clasifica: ${name}` }]
-      })
+      body: JSON.stringify({ food: name })
     });
 
-    const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || '';
-    const parsed = JSON.parse(text.trim());
+    const parsed = await response.json();
     currentClassification = parsed.groups || ['Otro'];
   } catch(e) {
     // Fallback keyword classification
@@ -1199,32 +1190,16 @@ window.getSuggestion = async function() {
   meals.slice(-14).forEach(m => m.groups.forEach(g => { groupCounts[g] = (groupCounts[g]||0)+1; }));
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/.netlify/functions/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Eres un nutriólogo mexicano experto. Analiza el historial de comidas y sugiere UNA comida balanceada para hoy.
-Responde SOLO con JSON válido, sin texto adicional, sin backticks:
-{
-  "nombre": "Nombre del platillo",
-  "razon": "Por qué es bueno hoy (máx 2 oraciones, menciona qué grupos faltan)",
-  "ingredientes": ["ingrediente 1", "ingrediente 2", ...],
-  "pasos": ["paso 1", "paso 2", ...],
-  "grupos": ["Grupo1", "Grupo2"]
-}
-Usa ingredientes accesibles en México. Receta práctica, máx 5 pasos.`,
-        messages: [{
-          role: 'user',
-          content: `Mi historial reciente:\n${last14days || 'Sin historial aún'}\n\nGrupos consumidos (últimas 2 semanas): ${JSON.stringify(groupCounts)}\n\n¿Qué me recomiendas comer hoy?`
-        }]
+        history: last14days || 'Sin historial aún',
+        groupCounts
       })
     });
 
-    const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || '';
-    const sug = JSON.parse(text.trim());
+    const sug = await response.json();
 
     document.getElementById('sug-meal-name').textContent = sug.nombre;
     document.getElementById('sug-reason').textContent = sug.razon;
