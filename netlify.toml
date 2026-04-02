@@ -1,0 +1,31 @@
+# netlify.toml — Komi App
+
+[build]
+  publish = "."        # Raíz del repo (donde está index.html)
+  command = ""         # Sin build command — HTML estático
+
+# Headers de seguridad + PWA
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Service Worker: no cachear en el navegador para que siempre sirva el más nuevo
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# manifest.json: cache corto
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# Redirigir todo a index.html (por si acaso se navega directo a una ruta)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
