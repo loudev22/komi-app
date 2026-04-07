@@ -231,9 +231,15 @@
     width: 28px; height: 28px; border-radius: 50%;
     background: #FEE2E2; display: flex; align-items: center;
     justify-content: center; font-size: 13px; cursor: pointer;
-    opacity: 0; transition: opacity 0.2s;
+    flex-shrink: 0;
   }
-  .meal-row:hover .meal-del { opacity: 1; }
+  .meal-edit {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--orange-light); display: flex; align-items: center;
+    justify-content: center; font-size: 13px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .meal-actions { display: flex; gap: 6px; align-items: center; }
 
   /* ── PUSH NOTIFICATION BANNER ── */
   .notif-banner {
@@ -871,7 +877,38 @@
     </div>
   </div>
 
-  <!-- ══ TOAST ══ -->
+  <!-- ══ MODAL: Edit meal ══ -->
+  <div class="modal-overlay" id="modal-edit" onclick="closeEditModalOutside(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Editar comida</div>
+
+      <input type="hidden" id="edit-meal-id">
+
+      <div class="input-label">Nombre de la comida</div>
+      <input class="input-field" id="edit-meal-name" type="text" placeholder="ej. Bistec con arroz">
+
+      <div class="input-label">Fecha</div>
+      <input class="input-field" id="edit-meal-date" type="date">
+
+      <div class="input-label">Hora</div>
+      <input class="input-field" id="edit-meal-time" type="time">
+
+      <div class="input-label">Nota opcional</div>
+      <input class="input-field" id="edit-meal-note" type="text" placeholder="ej. sin sal, con limón...">
+
+      <div class="input-label">Grupos <span style="font-weight:400;color:var(--text-2)">(toca para reclasificar)</span></div>
+      <div class="classified-tags show" id="edit-classified-tags" style="margin-bottom:12px"></div>
+
+      <div class="ai-classifying" id="edit-ai-classifying">
+        <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
+        <span>Komi está reclasificando...</span>
+      </div>
+
+      <button class="submit-btn" id="edit-reclassify-btn" onclick="reclassifyEdit()" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);margin-bottom:8px;">🔄 Reclasificar con IA</button>
+      <button class="submit-btn" id="edit-save-btn" onclick="saveEdit()">Guardar cambios ✓</button>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 
 </div>
@@ -890,7 +927,7 @@ const db = {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        'Prefer': method === 'POST' ? 'return=representation' : ''
+        'Prefer': method === 'POST' ? 'return=representation' : method === 'PATCH' ? 'return=minimal' : ''
       },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -899,6 +936,7 @@ const db = {
   },
   get: (path) => db.query('GET', path),
   post: (path, body) => db.query('POST', path, body),
+  patch: (path, body) => db.query('PATCH', path, body),
   delete: (path) => db.query('DELETE', path)
 };
 
@@ -988,7 +1026,10 @@ function renderHoy() {
           <div class="meal-tags">${m.groups.join(' · ')}</div>
         </div>
         <div class="meal-time">${m.time || ''}</div>
-        <div class="meal-del" onclick="deleteMeal('${m.id}')">✕</div>
+        <div class="meal-actions">
+          <div class="meal-edit" onclick="openEditModal('${m.id}')">✏️</div>
+          <div class="meal-del" onclick="deleteMeal('${m.id}')">✕</div>
+        </div>
       </div>
     `).join('');
   }
@@ -1122,6 +1163,110 @@ window.saveMeal = async function() {
 
   document.getElementById('save-btn').disabled = false;
   document.getElementById('save-btn').textContent = 'Guardar comida ✓';
+};
+
+// ── EDIT MEAL ──
+let editClassification = null;
+
+window.openEditModal = function(id) {
+  const meal = meals.find(m => m.id === id);
+  if (!meal) return;
+
+  document.getElementById('edit-meal-id').value = meal.id;
+  document.getElementById('edit-meal-name').value = meal.name;
+  document.getElementById('edit-meal-date').value = meal.date;
+  document.getElementById('edit-meal-time').value = meal.time || '';
+  document.getElementById('edit-meal-note').value = meal.note || '';
+
+  editClassification = [...meal.groups];
+  renderEditTags();
+
+  document.getElementById('edit-ai-classifying').classList.remove('show');
+  document.getElementById('modal-edit').classList.add('open');
+};
+
+function renderEditTags() {
+  const tagsEl = document.getElementById('edit-classified-tags');
+  tagsEl.innerHTML = editClassification.map(g =>
+    `<span class="tag-chip" style="background:${GROUP_COLORS[g]}">${GROUP_EMOJI[g]||'🍽️'} ${g}</span>`
+  ).join('');
+}
+
+window.closeEditModal = function() {
+  document.getElementById('modal-edit').classList.remove('open');
+};
+
+window.closeEditModalOutside = function(e) {
+  if (e.target === document.getElementById('modal-edit')) window.closeEditModal();
+};
+
+window.reclassifyEdit = async function() {
+  const name = document.getElementById('edit-meal-name').value.trim();
+  if (!name) return;
+
+  document.getElementById('edit-ai-classifying').classList.add('show');
+  document.getElementById('edit-reclassify-btn').disabled = true;
+
+  try {
+    const response = await fetch('/.netlify/functions/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ food: name })
+    });
+    const parsed = await response.json();
+    editClassification = parsed.groups || ['Otro'];
+  } catch(e) {
+    const lower = name.toLowerCase();
+    const groups = [];
+    if (/bistec|carne|pollo|res|puerco|arrachera|milanesa|chorizo|atún|salmón|pescado|huevo|hígado|carnitas|chicharrón|camarón|sardina/.test(lower)) groups.push('Proteína');
+    if (/nopal|calabaza|chayote|ensalada|verdura|espinaca|jitomate|zanahoria|brócoli|habas|acelga|chile|cebolla/.test(lower)) groups.push('Verdura');
+    if (/arroz|espagueti|papa|tortilla|sope|pan|pasta|tamal|pozole|chilaquil/.test(lower)) groups.push('Carbohidrato');
+    if (/frijol|lenteja|garbanzo|alubia/.test(lower)) groups.push('Leguminosa');
+    if (groups.length === 0) groups.push('Otro');
+    editClassification = groups;
+  }
+
+  document.getElementById('edit-ai-classifying').classList.remove('show');
+  document.getElementById('edit-reclassify-btn').disabled = false;
+  renderEditTags();
+};
+
+window.saveEdit = async function() {
+  const id = document.getElementById('edit-meal-id').value;
+  const name = document.getElementById('edit-meal-name').value.trim();
+  const date = document.getElementById('edit-meal-date').value;
+  const time = document.getElementById('edit-meal-time').value;
+  const note = document.getElementById('edit-meal-note').value.trim();
+
+  if (!name || !date) { showToast('Nombre y fecha son requeridos'); return; }
+
+  document.getElementById('edit-save-btn').disabled = true;
+  document.getElementById('edit-save-btn').textContent = 'Guardando...';
+
+  const updates = {
+    name,
+    date,
+    time: time || null,
+    note: note || null,
+    groups: editClassification
+  };
+
+  try {
+    await db.patch(`meals?id=eq.${id}`, updates);
+    // Update local state
+    const idx = meals.findIndex(m => m.id === id);
+    if (idx !== -1) meals[idx] = { ...meals[idx], ...updates };
+    window.closeEditModal();
+    renderHoy();
+    renderCalendar();
+    showToast('✓ Comida actualizada');
+  } catch(e) {
+    showToast('Error al guardar. Intenta de nuevo.');
+    console.error(e);
+  }
+
+  document.getElementById('edit-save-btn').disabled = false;
+  document.getElementById('edit-save-btn').textContent = 'Guardar cambios ✓';
 };
 
 // ── DELETE MEAL ──
