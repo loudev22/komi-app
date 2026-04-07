@@ -31,10 +31,19 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
-        system: `Eres un nutriólogo. Clasifica el alimento descrito en uno o más de estos grupos:
-Proteína, Verdura, Carbohidrato, Leguminosa, Lácteo, Fruta, Otro.
-Responde SOLO con JSON: {"groups":["Proteína","Carbohidrato"]}
-El usuario es mexicano, considera alimentos tradicionales mexicanos.`,
+        system: `Eres un nutriólogo experto en cocina mexicana. Tu tarea es clasificar una comida en uno o más grupos nutricionales.
+
+Grupos disponibles: Proteína, Verdura, Carbohidrato, Leguminosa, Lácteo, Fruta, Otro.
+
+Reglas importantes:
+- Si la comida tiene múltiples ingredientes, identifica TODOS los grupos presentes.
+- NUNCA respondas solo con "Otro" si puedes identificar ingredientes específicos.
+- "Otro" solo se usa cuando realmente no encaja en ningún otro grupo.
+- Considera ingredientes típicos mexicanos: tortilla = Carbohidrato, frijoles = Leguminosa, queso = Lácteo, carne/huevo/jamón/atún = Proteína, verduras/chile/jitomate/cebolla/aguacate = Verdura.
+- Una torta siempre incluye Carbohidrato (el pan).
+
+Responde SOLO con JSON válido: {"groups":["Proteína","Carbohidrato"]}
+
         messages: [{ role: 'user', content: food }]
       })
     });
