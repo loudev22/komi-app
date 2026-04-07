@@ -3,6 +3,7 @@
 [build]
   publish = "."        # Raíz del repo (donde está index.html)
   command = ""         # Sin build command — HTML estático
+  functions = "netlify/functions" 
 
 # Headers de seguridad + PWA
 [[headers]]
