@@ -23,3 +23,6 @@
   for = "/manifest.json"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
