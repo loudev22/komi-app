@@ -27,6 +27,11 @@
 
 # Redirigir todo a index.html (por si acaso se navega directo a una ruta)
 [[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
