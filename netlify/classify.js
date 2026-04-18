@@ -7,7 +7,7 @@ exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
     food = body.food;
-  } catch {
+  } catch (e) {
     return { statusCode: 400, body: 'Bad Request' };
   }
 
