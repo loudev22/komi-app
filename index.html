@@ -1112,10 +1112,12 @@ window.classifyMeal = async function() {
     // Fallback keyword classification
     const lower = name.toLowerCase();
     const groups = [];
-    if (/bistec|carne|pollo|res|puerco|arrachera|milanesa|chorizo|atún|salmón|pescado|huevo|hígado|carnitas|chicharrón|camarón|sardina/.test(lower)) groups.push('Proteína');
-    if (/nopal|calabaza|chayote|ensalada|verdura|espinaca|jitomate|zanahoria|brócoli|habas|acelga|chile|cebolla/.test(lower)) groups.push('Verdura');
-    if (/arroz|espagueti|papa|tortilla|sope|pan|pasta|tamal|pozole|chilaquil/.test(lower)) groups.push('Carbohidrato');
-    if (/frijol|lenteja|garbanzo|alubia/.test(lower)) groups.push('Leguminosa');
+    if (/bistec|carne|pollo|res|puerco|arrachera|milanesa|chorizo|atún|salmón|pescado|huevo|huevos|hígado|higado|carnitas|chicharrón|chicharron|camarón|camaron|sardina|jamón|jamon|tocino|salchicha|pavo|cecina|barbacoa|machaca|picadillo|albóndiga|albondiga|costilla|lomo|filete|tilapia|mojarra|pulpo|calamar|queso|requesón|requesone/.test(lower)) groups.push('Proteína');
+    if (/nopal|nopales|calabaza|chayote|ensalada|verdura|espinaca|jitomate|zanahoria|brócoli|brocoli|habas|acelga|chile|cebolla|encebollado|lechuga|pepino|betabel|col|coliflor|elote|hongos|champiñon|champinon|ejote|pimiento|aguacate|xoconostle|quelite|epazote|cilantro|rábano|rabano|jícama|jicama/.test(lower)) groups.push('Verdura');
+    if (/arroz|espagueti|espaguetti|papa|papas|tortilla|tortillas|sope|sopes|pan|pasta|tamal|tamales|pozole|chilaquil|chilaquiles|tostada|tostadas|quesadilla|gordita|memela|tlayuda|taco|tacos|bolillo|telera|birote|galleta|cereal|avena|maíz|maiz|elote|camote|amaranto|granola/.test(lower)) groups.push('Carbohidrato');
+    if (/frijol|frijoles|lenteja|lentejas|garbanzo|garbanzos|alubia|alubias|haba|habas/.test(lower)) groups.push('Leguminosa');
+    if (/leche|yogur|yogurt|queso|crema|jocoque|kefir|mantequilla/.test(lower)) groups.push('Lácteo');
+    if (/manzana|naranja|plátano|platano|mango|melón|melon|sandía|sandia|uva|pera|durazno|fresa|kiwi|papaya|piña|pina|guayaba|mandarina|toronja|limón|limon/.test(lower)) groups.push('Fruta');
     if (groups.length === 0) groups.push('Otro');
     currentClassification = groups;
   }
@@ -1218,10 +1220,12 @@ window.reclassifyEdit = async function() {
   } catch(e) {
     const lower = name.toLowerCase();
     const groups = [];
-    if (/bistec|carne|pollo|res|puerco|arrachera|milanesa|chorizo|atún|salmón|pescado|huevo|hígado|carnitas|chicharrón|camarón|sardina/.test(lower)) groups.push('Proteína');
-    if (/nopal|calabaza|chayote|ensalada|verdura|espinaca|jitomate|zanahoria|brócoli|habas|acelga|chile|cebolla/.test(lower)) groups.push('Verdura');
-    if (/arroz|espagueti|papa|tortilla|sope|pan|pasta|tamal|pozole|chilaquil/.test(lower)) groups.push('Carbohidrato');
-    if (/frijol|lenteja|garbanzo|alubia/.test(lower)) groups.push('Leguminosa');
+    if (/bistec|carne|pollo|res|puerco|arrachera|milanesa|chorizo|atún|salmón|pescado|huevo|huevos|hígado|higado|carnitas|chicharrón|chicharron|camarón|camaron|sardina|jamón|jamon|tocino|salchicha|pavo|cecina|barbacoa|machaca|picadillo|albóndiga|albondiga|costilla|lomo|filete|tilapia|mojarra|pulpo|calamar|queso|requesón|requesone/.test(lower)) groups.push('Proteína');
+    if (/nopal|nopales|calabaza|chayote|ensalada|verdura|espinaca|jitomate|zanahoria|brócoli|brocoli|habas|acelga|chile|cebolla|encebollado|lechuga|pepino|betabel|col|coliflor|elote|hongos|champiñon|champinon|ejote|pimiento|aguacate|xoconostle|quelite|epazote|cilantro|rábano|rabano|jícama|jicama/.test(lower)) groups.push('Verdura');
+    if (/arroz|espagueti|espaguetti|papa|papas|tortilla|tortillas|sope|sopes|pan|pasta|tamal|tamales|pozole|chilaquil|chilaquiles|tostada|tostadas|quesadilla|gordita|memela|tlayuda|taco|tacos|bolillo|telera|birote|galleta|cereal|avena|maíz|maiz|elote|camote|amaranto|granola/.test(lower)) groups.push('Carbohidrato');
+    if (/frijol|frijoles|lenteja|lentejas|garbanzo|garbanzos|alubia|alubias|haba|habas/.test(lower)) groups.push('Leguminosa');
+    if (/leche|yogur|yogurt|queso|crema|jocoque|kefir|mantequilla/.test(lower)) groups.push('Lácteo');
+    if (/manzana|naranja|plátano|platano|mango|melón|melon|sandía|sandia|uva|pera|durazno|fresa|kiwi|papaya|piña|pina|guayaba|mandarina|toronja|limón|limon/.test(lower)) groups.push('Fruta');
     if (groups.length === 0) groups.push('Otro');
     editClassification = groups;
   }
