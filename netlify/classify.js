@@ -1,23 +1,18 @@
-// netlify/functions/classify.js
-// Proxy para clasificación de grupos nutricionales con Claude API
-// La API key vive aquí como variable de entorno — nunca se expone al cliente
-
 exports.handler = async (event) => {
-  // Solo aceptar POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  let body;
+  let food;
   try {
-    body = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    food = body.food;
   } catch {
-    return { statusCode: 400, body: 'Bad Request — invalid JSON' };
+    return { statusCode: 400, body: 'Bad Request' };
   }
 
-  const { food } = body;
   if (!food || typeof food !== 'string') {
-    return { statusCode: 400, body: 'Bad Request — missing "food" field' };
+    return { statusCode: 400, body: 'Missing food field' };
   }
 
   try {
@@ -31,25 +26,25 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
-        system: `Eres un nutriólogo. Clasifica el alimento descrito en uno o más de estos grupos:
-Proteína, Verdura, Carbohidrato, Leguminosa, Lácteo, Fruta, Otro.
-Responde SOLO con JSON: {"groups":["Proteína","Carbohidrato"]}
-El usuario es mexicano, considera alimentos tradicionales mexicanos.`,
+        system: 'Eres un nutriologo. Clasifica el alimento en uno o mas de estos grupos: Proteina, Verdura, Carbohidrato, Leguminosa, Lacteo, Fruta, Otro. Responde SOLO con JSON valido: {"groups":["Proteina"]}. Sin acentos en los valores del JSON. El usuario es mexicano.',
         messages: [{ role: 'user', content: food }]
       })
     });
 
     const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || '';
-    const parsed = JSON.parse(text.trim());
+    const text = (data.content || []).map(c => c.text || '').join('').trim();
+    const parsed = JSON.parse(text);
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify(parsed)
     };
   } catch (err) {
     console.error('classify error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Claude API error' }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Claude API error' })
+    };
   }
 };
